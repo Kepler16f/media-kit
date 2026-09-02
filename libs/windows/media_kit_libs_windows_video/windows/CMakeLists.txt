@@ -17,13 +17,6 @@ add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
 # ------------------------------------------------------------------------------
 function(download_and_verify url md5 locationForArchive)
-  # When md5 is empty we trust the archive's own integrity on extraction.
-  if(md5 STREQUAL "")
-    message(STATUS "Downloading (no md5 check) from ${url}...")
-    if(NOT EXISTS "${locationForArchive}")
-      file(DOWNLOAD "${url}" "${locationForArchive}")
-    endif()
-    return()
   endif()
   # Check if the archive exists.
   if(EXISTS "${locationForArchive}")
@@ -137,7 +130,7 @@ endif()
 if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
   set(ANGLE "ANGLE_WINARM64.7z")
   set(ANGLE_URL "https://github.com/talynone/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/${ANGLE}")
-  set(ANGLE_MD5 "")
+  set(ANGLE_MD5 "b56aaae894ccf6c8ee90b59ee642a787")
 else()
   set(ANGLE "ANGLE.7z")
   set(ANGLE_URL "https://github.com/alexmercerind/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/${ANGLE}")
