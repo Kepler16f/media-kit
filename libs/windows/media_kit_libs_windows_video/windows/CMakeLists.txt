@@ -17,7 +17,6 @@ add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
 # ------------------------------------------------------------------------------
 function(download_and_verify url md5 locationForArchive)
-  endif()
   # Check if the archive exists.
   if(EXISTS "${locationForArchive}")
     file(MD5 "${locationForArchive}" ARCHIVE_MD5)
