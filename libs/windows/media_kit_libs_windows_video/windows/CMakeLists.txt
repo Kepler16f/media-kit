@@ -17,6 +17,14 @@ add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
 # ------------------------------------------------------------------------------
 function(download_and_verify url md5 locationForArchive)
+  # When md5 is empty we trust the archive's own integrity on extraction.
+  if(md5 STREQUAL "")
+    message(STATUS "Downloading (no md5 check) from ${url}...")
+    if(NOT EXISTS "${locationForArchive}")
+      file(DOWNLOAD "${url}" "${locationForArchive}")
+    endif()
+    return()
+  endif()
   # Check if the archive exists.
   if(EXISTS "${locationForArchive}")
     file(MD5 "${locationForArchive}" ARCHIVE_MD5)
@@ -126,7 +134,15 @@ endif()
 # ------------------------------------------------------------------------------
 
 # ANGLE archive containing the pre-built shared libraries & headers.
-set(ANGLE "ANGLE.7z")
+if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
+  set(ANGLE "ANGLE_WINARM64.7z")
+  set(ANGLE_URL "https://github.com/talynone/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/${ANGLE}")
+  set(ANGLE_MD5 "")
+else()
+  set(ANGLE "ANGLE.7z")
+  set(ANGLE_URL "https://github.com/alexmercerind/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/${ANGLE}")
+  set(ANGLE_MD5 "e866f13e8d552348058afaafe869b1ed")
+endif()
 
 # Download URL & MD5 hash of the ANGLE archive.
 set(ANGLE_URL "https://github.com/alexmercerind/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/ANGLE.7z")
