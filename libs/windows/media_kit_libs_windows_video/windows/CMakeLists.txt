@@ -70,15 +70,16 @@ find_program(SEVENZ_EXECUTABLE NAMES 7z 7za)
 # libmpv archive containing the pre-built shared libraries & headers.
 # Detect architecture and select the appropriate libmpv archive.
 if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
-  set(LIBMPV "mpv-dev-aarch64-20260607-git-43b14a4.7z")
-  set(LIBMPV_MD5 "e4c49712b9cf0d77e1ae8e1a9c8e3ed7")
+  set(LIBMPV "mpv-dev-aarch64-20260903-git-69e63f425a.7z")
+  set(LIBMPV_MD5 "bb469724c9e151290b4730c57b3a3800")
+  set(LIBMPV_URL "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260903/${LIBMPV}")
 else()
   set(LIBMPV "mpv-dev-x86_64-20260607-git-43b14a4.7z")
   set(LIBMPV_MD5 "b84900bbc6fcb995ca6a24f62bee671f")
+  set(LIBMPV_URL "https://github.com/bggRGjQaUbCoE/mpv-winbuild-cmake/releases/download/20260607/${LIBMPV}")
 endif()
 
 # Download URL for the libmpv archive from the latest release.
-set(LIBMPV_URL "https://github.com/bggRGjQaUbCoE/mpv-winbuild-cmake/releases/download/20260607/${LIBMPV}")
 
 # Download location of the libmpv archive.
 set(LIBMPV_ARCHIVE "${CMAKE_BINARY_DIR}/${LIBMPV}")
