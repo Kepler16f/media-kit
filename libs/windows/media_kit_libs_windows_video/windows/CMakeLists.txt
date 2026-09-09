@@ -69,10 +69,14 @@ find_program(SEVENZ_EXECUTABLE NAMES 7z 7za)
 
 # libmpv archive containing the pre-built shared libraries & headers.
 # Detect architecture and select the appropriate libmpv archive.
+# ARM64 upgraded to zhongfly/mpv-winbuild daily build 2026-09-08
+# (mpv v0.41.0-1042-g7e4cb538a3): dump forensics on PiliPlus4WOA traced the
+# mid-playback crash to the 20260903 build's ffmpeg decode path (NULL table
+# pointer in a universal libavcodec helper after curlproto stream corruption).
 if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
-  set(LIBMPV "mpv-dev-aarch64-20260903-git-69e63f425a.7z")
-  set(LIBMPV_MD5 "bb469724c9e151290b4730c57b3a3800")
-  set(LIBMPV_URL "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260903/${LIBMPV}")
+  set(LIBMPV "mpv-dev-aarch64-20260908-git-7e4cb538a3.7z")
+  set(LIBMPV_MD5 "5f87ff8b1954b1733bafa9c76e8abb64")
+  set(LIBMPV_URL "https://github.com/zhongfly/mpv-winbuild/releases/download/2026-09-08-7e4cb538a3/${LIBMPV}")
 else()
   set(LIBMPV "mpv-dev-x86_64-20260607-git-43b14a4.7z")
   set(LIBMPV_MD5 "b84900bbc6fcb995ca6a24f62bee671f")
