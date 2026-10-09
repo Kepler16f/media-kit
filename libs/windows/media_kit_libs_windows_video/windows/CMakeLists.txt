@@ -73,10 +73,15 @@ find_program(SEVENZ_EXECUTABLE NAMES 7z 7za)
 # (mpv v0.41.0-1042-g7e4cb538a3): dump forensics on PiliPlus4WOA traced the
 # mid-playback crash to the 20260903 build's ffmpeg decode path (NULL table
 # pointer in a universal libavcodec helper after curlproto stream corruption).
+# Self-hosted mirror (Kepler16f/media-kit release libmpv-arm64-20260910, file
+# from zhongfly tag 2026-09-10-7e4cb538a3, same mpv commit): zhongfly prunes
+# daily-release tags, and download_and_verify() has no HTTP status check --
+# a 404 writes the error page to the .7z and only then fails the MD5 with a
+# misleading "Integrity check failed".
 if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
-  set(LIBMPV "mpv-dev-aarch64-20260908-git-7e4cb538a3.7z")
-  set(LIBMPV_MD5 "5f87ff8b1954b1733bafa9c76e8abb64")
-  set(LIBMPV_URL "https://github.com/zhongfly/mpv-winbuild/releases/download/2026-09-08-7e4cb538a3/${LIBMPV}")
+  set(LIBMPV "mpv-dev-aarch64-20260910-git-7e4cb538a3.7z")
+  set(LIBMPV_MD5 "3ad1d9a11fda53f782fa141730064038")
+  set(LIBMPV_URL "https://github.com/Kepler16f/media-kit/releases/download/libmpv-arm64-20260910/${LIBMPV}")
 else()
   set(LIBMPV "mpv-dev-x86_64-20260607-git-43b14a4.7z")
   set(LIBMPV_MD5 "b84900bbc6fcb995ca6a24f62bee671f")
