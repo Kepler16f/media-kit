@@ -10,10 +10,14 @@
 
 #include <iostream>
 
+#include "render_trace.h"
+
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
 
 int D3D11Renderer::instance_count_ = 0;
+
+PiliRenderTrace g_piliTrace;
 
 D3D11Renderer::D3D11Renderer(int32_t width, int32_t height,
                              IDXGIAdapter* flutter_adapter)

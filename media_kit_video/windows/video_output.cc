@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+#include "render_trace.h"
+
 // Limit the frame size to 1080p in software rendering.
 // This is for performance reasons & to avoid allocating too much memory.
 #define SW_RENDERING_MAX_WIDTH 1920
@@ -190,6 +192,7 @@ void VideoOutput::NotifyRender() {
 }
 
 void VideoOutput::Render() {
+  g_piliTrace.render++;
   if (texture_id_) {
     // H/W
     if (d3d11_renderer_ != nullptr) {
@@ -198,6 +201,7 @@ void VideoOutput::Render() {
       if (!(flags & MPV_RENDER_UPDATE_FRAME)) {
         return;
       }
+      g_piliTrace.frame++;
       // Ask mpv for the texture it should render into. The mailbox hands out
       // the producer-private write slot; the consumer keeps sampling the last
       // fence-confirmed slot, so mpv never overwrites the frame Flutter is
@@ -220,7 +224,9 @@ void VideoOutput::Render() {
                   << std::hex << hr << std::dec << ")" << std::endl;
       }
       mpv_render_context_report_swap(render_context_);
+      g_piliTrace.swap++;
       d3d11_renderer_->ProducerCommit();
+      g_piliTrace.commit++;
     }
     // S/W
     if (pixel_buffer_ != nullptr) {
@@ -247,7 +253,9 @@ void VideoOutput::Render() {
     }
     try {
       // Notify Flutter that a new frame is available.
+      g_piliTrace.mark++;
       registrar_->texture_registrar()->MarkTextureFrameAvailable(texture_id_);
+      g_piliTrace.tick();
     } catch (...) {
       // Prevent any redundant exceptions if the texture is unregistered etc.
     }
@@ -384,6 +392,7 @@ void VideoOutput::Resize(int64_t required_width, int64_t required_height) {
             kFlutterDesktopGpuSurfaceTypeDxgiSharedHandle, [&](auto, auto) {
               std::lock_guard<std::mutex> lock(textures_mutex_);
               if (texture_id_) {
+                g_piliTrace.cb++;
                 // PiliPlus4WOA: RegisterTexture() hands this callback to the
                 // engine before textures_.emplace() runs, so a lookup can
                 // legally miss. Report "no descriptor" instead of throwing.
