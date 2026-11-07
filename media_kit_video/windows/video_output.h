@@ -13,7 +13,7 @@
 
 #include <client.h>
 #include <render.h>
-#include <render_gl.h>
+#include <render_dxgi.h>
 
 #include <future>
 #include <memory>
@@ -22,8 +22,13 @@
 #include <flutter/plugin_registrar_windows.h>
 #include <flutter/standard_method_codec.h>
 
-#include "angle_surface_manager.h"
+#include "d3d11_renderer.h"
 #include "thread_pool.h"
+
+typedef struct VideoDimensions {
+  int64_t width = 0;
+  int64_t height = 0;
+} VideoDimensions;
 
 typedef struct _VideoOutputConfiguration {
   std::optional<int64_t> width;
@@ -43,23 +48,33 @@ class VideoOutput {
   int64_t texture_id() const { return texture_id_; }
   int64_t width() const {
     // H/W
-    if (surface_manager_ != nullptr && texture_id_) {
-      return surface_manager_->width();
+    if (d3d11_renderer_ != nullptr && texture_id_) {
+      return d3d11_renderer_->width();
     }
     // S/W
     if (pixel_buffer_ != nullptr && texture_id_) {
-      return pixel_buffer_textures_.at(texture_id_)->width;
+      // PiliPlus4WOA: a lookup can miss during the texture registration window
+      // (see video_output.cc); fall through to the requested size instead of
+      // throwing out_of_range into whoever is asking.
+      const auto mk_it = pixel_buffer_textures_.find(texture_id_);
+      if (mk_it != pixel_buffer_textures_.end()) {
+        return mk_it->second->width;
+      }
     }
     return width_.value_or(1);
   }
   int64_t height() const {
     // H/W
-    if (surface_manager_ != nullptr && texture_id_) {
-      return surface_manager_->height();
+    if (d3d11_renderer_ != nullptr && texture_id_) {
+      return d3d11_renderer_->height();
     }
     // S/W
     if (pixel_buffer_ != nullptr && texture_id_) {
-      return pixel_buffer_textures_.at(texture_id_)->height;
+      // PiliPlus4WOA: see the note above.
+      const auto mk_it = pixel_buffer_textures_.find(texture_id_);
+      if (mk_it != pixel_buffer_textures_.end()) {
+        return mk_it->second->height;
+      }
     }
     return height_.value_or(1);
   }
@@ -85,9 +100,7 @@ class VideoOutput {
 
   void Resize(int64_t required_width, int64_t required_height);
 
-  int64_t GetVideoWidth();
-
-  int64_t GetVideoHeight();
+  VideoDimensions GetVideoDimensions();
 
   std::optional<int64_t> height_ = std::nullopt;
   std::optional<int64_t> width_ = std::nullopt;
@@ -110,7 +123,7 @@ class VideoOutput {
 
   // H/W rendering.
 
-  std::unique_ptr<ANGLESurfaceManager> surface_manager_ = nullptr;
+  std::unique_ptr<D3D11Renderer> d3d11_renderer_ = nullptr;
   std::unordered_map<int64_t,
                      std::unique_ptr<FlutterDesktopGpuSurfaceDescriptor>>
       textures_ = {};
