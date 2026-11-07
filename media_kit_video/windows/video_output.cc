@@ -55,18 +55,22 @@ VideoOutput::VideoOutput(int64_t handle,
             static_cast<int32_t>(height_.value_or(1)),
             flutter_adapter);
 
-        // Initialize mpv with the D3D11 device and swap chain
-        mpv_dxgi_init_params init_params = {
+        // Initialize mpv with our D3D11 device.
+        //
+        // mpv's D3D11 render API (libmpv/render_d3d11.h, added 2026-04) takes
+        // only the device; the *texture* mpv renders into is handed over per
+        // frame through MPV_RENDER_PARAM_D3D11_FBO. Because mpv decodes on this
+        // very device, d3d11va can decode **zero-copy** into it -- with the old
+        // ANGLE/OpenGL output path mpv could only use d3d11va-copy, i.e. a
+        // GPU->CPU->GPU round trip for every single frame.
+        mpv_d3d11_init_params init_params = {
             d3d11_renderer_->device(),
-            // Must provide swap chain, not nullptr
-            // Otherwise, you will get freeze.
-            d3d11_renderer_->swap_chain()
         };
 
         int advanced_control = 1;
         mpv_render_param params[] = {
-            {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_DXGI},
-            {MPV_RENDER_PARAM_DXGI_INIT_PARAMS, &init_params},
+            {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_D3D11},
+            {MPV_RENDER_PARAM_D3D11_INIT_PARAMS, &init_params},
             {MPV_RENDER_PARAM_ADVANCED_CONTROL, &advanced_control},
             {MPV_RENDER_PARAM_INVALID, nullptr},
         };
@@ -189,12 +193,34 @@ void VideoOutput::Render() {
   if (texture_id_) {
     // H/W
     if (d3d11_renderer_ != nullptr) {
-      uint64_t flags = mpv_render_context_update(render_context_);
-      if (flags & MPV_RENDER_UPDATE_FRAME) {
-        mpv_render_context_render(render_context_, nullptr);
-        mpv_render_context_report_swap(render_context_);
-        d3d11_renderer_->ProducerCommit();
+      // Advanced-control flow: mpv tells us when a new frame is ready.
+      const uint64_t flags = mpv_render_context_update(render_context_);
+      if (!(flags & MPV_RENDER_UPDATE_FRAME)) {
+        return;
       }
+      // Ask mpv for the texture it should render into. The mailbox hands out
+      // the producer-private write slot; the consumer keeps sampling the last
+      // fence-confirmed slot, so mpv never overwrites the frame Flutter is
+      // currently displaying.
+      void* buffer = nullptr;
+      const HRESULT hr = d3d11_renderer_->swap_chain()->GetBuffer(
+          0, __uuidof(ID3D11Texture2D), &buffer);
+      if (SUCCEEDED(hr) && buffer != nullptr) {
+        auto* target = static_cast<ID3D11Texture2D*>(buffer);
+        mpv_d3d11_fbo fbo{target};
+        mpv_render_param params[] = {
+            {MPV_RENDER_PARAM_D3D11_FBO, &fbo},
+            {MPV_RENDER_PARAM_INVALID, nullptr},
+        };
+        mpv_render_context_render(render_context_, params);
+        target->Release();
+      } else {
+        std::cout << "media_kit: VideoOutput: could not obtain a D3D11 render "
+                     "target (hr=0x"
+                  << std::hex << hr << std::dec << ")" << std::endl;
+      }
+      mpv_render_context_report_swap(render_context_);
+      d3d11_renderer_->ProducerCommit();
     }
     // S/W
     if (pixel_buffer_ != nullptr) {

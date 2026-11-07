@@ -84,9 +84,23 @@ find_program(SEVENZ_EXECUTABLE NAMES 7z 7za)
 # the error page to the .7z and only then fails the MD5 with a misleading
 # "Integrity check failed" (CI runs 37921913968 / 37931029077).
 if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
-  set(LIBMPV "mpv-dev-aarch64-20261011-git-d94d095814.7z")
-  set(LIBMPV_MD5 "0bf27e3d37e1c21e20ba3bf8c24bf8cb")
-  set(LIBMPV_URL "https://github.com/Kepler16f/media-kit/releases/download/libmpv-arm64-20261011/${LIBMPV}")
+  # 2026-11-07: mpv v0.41.0-1552-g55d3feb45c.
+  #
+  # Why the bump: the previous 20261011 build (d94d095814) was compiled WITHOUT
+  # OpenGL -- mpv's client render API only had the GL backend (guarded by
+  # HAVE_GL), so `mpv_render_context_create(MPV_RENDER_API_TYPE_OPENGL)`
+  # returned MPV_ERROR_NOT_IMPLEMENTED and media_kit_video silently fell back
+  # to CPU software rendering. Windows on ARM has no desktop OpenGL driver for
+  # mpv to use either, and without the D3D11 client render API there is no
+  # GPU presentation path at all.
+  #
+  # This build adds mpv's D3D11 client render API (MPV_RENDER_API_TYPE_D3D11),
+  # so mpv renders straight into a D3D11 texture of *our* device and shares it
+  # with Flutter -- GPU rendering, and d3d11va zero-copy hardware decoding on
+  # the same device.
+  set(LIBMPV "mpv-dev-aarch64-20261107-git-55d3feb45c.7z")
+  set(LIBMPV_MD5 "08ac2c550636331df8ca840455079d76")
+  set(LIBMPV_URL "https://github.com/Kepler16f/media-kit/releases/download/libmpv-arm64-20261107/${LIBMPV}")
 else()
   set(LIBMPV "mpv-dev-x86_64-20260607-git-43b14a4.7z")
   set(LIBMPV_MD5 "b84900bbc6fcb995ca6a24f62bee671f")

@@ -13,7 +13,6 @@
 
 #include <client.h>
 #include <render.h>
-#include <render_dxgi.h>
 
 #include <future>
 #include <memory>
@@ -24,6 +23,25 @@
 
 #include "d3d11_renderer.h"
 #include "thread_pool.h"
+
+// mpv's D3D11 render API.
+//
+// mpv declares the API *values* (MPV_RENDER_API_TYPE_D3D11,
+// MPV_RENDER_PARAM_D3D11_INIT_PARAMS, MPV_RENDER_PARAM_D3D11_FBO) in
+// <render.h>, but the two struct definitions live in <render_d3d11.h> -- and
+// the mpv-winbuild *-dev package does not ship that header (it only ships
+// client.h / render.h / render_gl.h / stream_cb.h).
+//
+// The structs are plain PODs with a single pointer member, so we declare them
+// here with exactly the layout mpv expects. If a future libmpv ships
+// <render_d3d11.h>, switch the include below and delete this block.
+typedef struct mpv_d3d11_init_params {
+  void *device;
+} mpv_d3d11_init_params;
+
+typedef struct mpv_d3d11_fbo {
+  void *tex;
+} mpv_d3d11_fbo;
 
 typedef struct VideoDimensions {
   int64_t width = 0;
